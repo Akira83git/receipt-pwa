@@ -7,12 +7,22 @@ const GROUPS = [
 
 const els = Object.fromEntries([
   "receipt-input", "preview", "scan-button", "progress-wrap", "progress",
-  "status", "assignment", "colors", "items", "live-totals",
+  "status", "assignment", "colors", "items", "live-totals", "wheel-modal",
+  "wheel-backdrop", "wheel-cancel", "wheel-done", "wheel-value", "integer-wheel", "decimal-wheel",
 ].map(id => [id, document.getElementById(id)]));
 
 let imageFile;
 let activeGroup = GROUPS[0].id;
 let items = [];
+let editingItem = null;
+let wheelInteger = 0;
+let wheelDecimal = 0;
+let wheelNegative = false;
+
+els["integer-wheel"].innerHTML = Array.from({ length: 1999 }, (_, index) => index - 999).map(value =>
+  `<div class="wheel-option" data-value="${value}">${value}</div>`).join("");
+els["decimal-wheel"].innerHTML = Array.from({ length: 100 }, (_, value) =>
+  `<div class="wheel-option" data-value="${value}">${String(value).padStart(2, "0")}</div>`).join("");
 
 els.colors.innerHTML = GROUPS.map((group, index) => `
   <button class="color-button ${index === 0 ? "active" : ""}" type="button"
@@ -48,22 +58,28 @@ els.items.addEventListener("input", event => {
   if (nameInput) {
     const item = items.find(entry => entry.id === Number(nameInput.dataset.nameId));
     if (item) item.name = nameInput.value;
+    autoResizeName(nameInput);
     return;
   }
-  const input = event.target.closest("[data-price-id]");
-  if (!input) return;
-  const item = items.find(entry => entry.id === Number(input.dataset.priceId));
-  const value = Number(input.value);
-  if (item && Number.isFinite(value) && value >= 0) item.price = value;
-  renderLiveTotals();
 });
 
-els.items.addEventListener("change", event => {
-  const input = event.target.closest("[data-price-id]");
-  if (!input) return;
-  const item = items.find(entry => entry.id === Number(input.dataset.priceId));
-  if (!item) return;
-  input.value = item.price.toFixed(2);
+els.items.addEventListener("click", event => {
+  const priceButton = event.target.closest("[data-price-id]");
+  if (!priceButton) return;
+  openWheel(Number(priceButton.dataset.priceId));
+});
+
+els["integer-wheel"].addEventListener("scroll", () => updateWheelFromScroll("integer"), { passive: true });
+els["decimal-wheel"].addEventListener("scroll", () => updateWheelFromScroll("decimal"), { passive: true });
+els["wheel-cancel"].addEventListener("click", closeWheel);
+els["wheel-backdrop"].addEventListener("click", closeWheel);
+els["wheel-done"].addEventListener("click", () => {
+  if (editingItem) {
+    const absoluteValue = Math.abs(wheelInteger) + wheelDecimal / 100;
+    editingItem.price = wheelNegative ? -absoluteValue : absoluteValue;
+  }
+  closeWheel();
+  renderItems();
 });
 
 els["scan-button"].addEventListener("click", scanReceipt);
@@ -117,13 +133,19 @@ function renderItems() {
         <button class="item-select" type="button" data-assign-id="${item.id}" aria-label="色を付ける">
           <span class="item-dot"></span>
         </button>
-        <input class="name-edit" type="text" value="${escapeAttr(item.name)}" data-name-id="${item.id}" aria-label="商品名">
+        <textarea class="name-edit" rows="1" data-name-id="${item.id}" aria-label="商品名">${escapeHtml(item.name)}</textarea>
       </div>
-      <label class="price-edit">$<input type="number" inputmode="decimal" min="0" step="0.01"
-        value="${item.price.toFixed(2)}" data-price-id="${item.id}" aria-label="金額"></label>
+      <button class="price-edit" type="button" data-price-id="${item.id}" aria-label="金額を修正">
+        $${item.price.toFixed(2)}</button>
     </div>`;
   }).join("");
+  els.items.querySelectorAll(".name-edit").forEach(autoResizeName);
   renderLiveTotals();
+}
+
+function autoResizeName(field) {
+  field.style.height = "auto";
+  field.style.height = `${field.scrollHeight}px`;
 }
 
 function getGroupTotals() {
@@ -139,6 +161,46 @@ function renderLiveTotals() {
   els["live-totals"].innerHTML = selectedRows.length ? selectedRows.map(row => `<div class="live-row" style="--group-color:${row.color}">
     <span class="live-dot"></span><span class="sr-only">${row.label}</span><span></span><strong>$${row.total.toFixed(2)}</strong>
   </div>`).join("") : `<p class="empty-total">まだ色分けされていません</p>`;
+}
+
+function openWheel(itemId) {
+  editingItem = items.find(item => item.id === itemId);
+  if (!editingItem) return;
+  const absolutePrice = Math.abs(editingItem.price);
+  wheelNegative = editingItem.price < 0;
+  wheelInteger = Math.min(999, Math.max(-999, (wheelNegative ? -1 : 1) * Math.floor(absolutePrice)));
+  wheelDecimal = Math.min(99, Math.max(0, Math.round((absolutePrice - Math.floor(absolutePrice)) * 100)));
+  els["wheel-modal"].hidden = false;
+  document.body.classList.add("modal-open");
+  requestAnimationFrame(() => {
+    els["integer-wheel"].scrollTop = (wheelInteger + 999) * 44;
+    els["decimal-wheel"].scrollTop = wheelDecimal * 44;
+    updateWheelValue();
+  });
+}
+
+function closeWheel() {
+  els["wheel-modal"].hidden = true;
+  document.body.classList.remove("modal-open");
+  editingItem = null;
+}
+
+function updateWheelFromScroll(type) {
+  const wheel = type === "integer" ? els["integer-wheel"] : els["decimal-wheel"];
+  const value = type === "integer"
+    ? Math.min(999, Math.max(-999, Math.round(wheel.scrollTop / 44) - 999))
+    : Math.min(99, Math.max(0, Math.round(wheel.scrollTop / 44)));
+  if (type === "integer") {
+    wheelInteger = value;
+    if (value !== 0) wheelNegative = value < 0;
+  }
+  else wheelDecimal = value;
+  updateWheelValue();
+}
+
+function updateWheelValue() {
+  const sign = wheelNegative ? "-" : "";
+  els["wheel-value"].textContent = `${sign}${Math.abs(wheelInteger)}.${String(wheelDecimal).padStart(2, "0")}`;
 }
 
 function setBusy(busy, status = "", progress = 0) {
@@ -162,10 +224,6 @@ function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value;
   return div.innerHTML;
-}
-
-function escapeAttr(value) {
-  return String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
