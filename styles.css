@@ -1,0 +1,51 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+  color: #22211f;
+  background: #f7f4ee;
+  --red: #e65a56;
+  --blue: #4f83cc;
+  --yellow: #e7b93f;
+  --green: #52a36d;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+main { width: min(100%, 620px); margin: auto; padding: calc(24px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom)); }
+header { padding: 10px 4px 18px; }
+.eyebrow { margin: 0; font-size: .72rem; letter-spacing: .16em; color: #837d73; }
+h1 { margin: 5px 0 4px; font-size: 2rem; }
+header > p:last-child, .hint { color: #706b63; }
+.card { margin-bottom: 16px; padding: 18px; border: 1px solid #e3ddd2; border-radius: 20px; background: #fff; box-shadow: 0 8px 26px #493b2810; }
+h2 { margin: 2px 0 12px; font-size: 1rem; }
+button, .photo-button { min-height: 48px; border: 0; border-radius: 14px; font: inherit; font-weight: 700; cursor: pointer; }
+.photo-button { display: grid; place-items: center; width: 100%; border: 1.5px dashed #9e9588; background: #fbfaf7; }
+#receipt-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+#preview { display: block; width: 100%; max-height: 360px; margin: 14px 0; border-radius: 14px; object-fit: contain; background: #eee; }
+.primary { width: 100%; margin-top: 14px; padding: 0 18px; color: #fff; background: #22211f; }
+.primary:disabled { opacity: .35; }
+progress { width: 100%; margin-top: 15px; accent-color: #22211f; }
+#status { margin: 6px 0 0; font-size: .85rem; text-align: center; color: #706b63; }
+.colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
+.color-button { display: grid; place-items: center; gap: 4px; padding: 8px 2px; border: 2px solid transparent; background: #f5f2ec; font-size: .78rem; }
+.color-button::before { content: ""; width: 23px; height: 23px; border-radius: 50%; background: var(--group-color); }
+.color-button.active { border-color: var(--group-color); background: #fff; }
+.hint { margin: -6px 0 12px; font-size: .78rem; }
+.items { display: grid; gap: 8px; }
+.item { display: grid; grid-template-columns: 1fr 104px; gap: 8px; align-items: center; width: 100%; min-height: 56px; padding: 7px 8px 7px 12px; border-radius: 14px; background: #f7f5f1; }
+.item-main { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; min-width: 0; }
+.item-select { display: grid; place-items: center; width: 38px; min-height: 44px; padding: 0; border-radius: 10px; background: transparent; }
+.item-dot { width: 12px; height: 12px; border: 2px solid #b7b0a6; border-radius: 50%; background: #fff; }
+.item.assigned .item-dot { border-color: var(--group-color); background: var(--group-color); }
+.name-edit { width: 100%; min-width: 0; padding: 9px 8px; border: 1px solid transparent; border-radius: 9px; outline: 0; background: transparent; font: inherit; font-weight: 500; }
+.name-edit:focus { border-color: #d8d2c8; background: #fff; }
+.price-edit { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 3px; min-height: 42px; padding: 0 8px; border: 1px solid #d8d2c8; border-radius: 10px; background: #fff; font-variant-numeric: tabular-nums; }
+.price-edit input { width: 100%; min-width: 0; padding: 8px 0; border: 0; outline: 0; background: transparent; font: inherit; font-weight: 700; text-align: right; }
+.price-edit:focus-within { border-color: #22211f; box-shadow: 0 0 0 2px #22211f16; }
+.live-summary { margin-top: 18px; padding: 14px; border-radius: 14px; background: #f7f5f1; }
+.live-summary h2 { margin-bottom: 5px; }
+.live-row { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; padding: 6px 0; font-size: .9rem; }
+.live-dot { width: 10px; height: 10px; margin-top: 4px; border-radius: 50%; background: var(--group-color); }
+.empty-total { margin: 8px 0 2px; color: #837d73; font-size: .82rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+[hidden] { display: none !important; }

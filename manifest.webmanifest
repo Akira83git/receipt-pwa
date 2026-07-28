@@ -1,0 +1,13 @@
+{
+  "name": "レシート色分け計算",
+  "short_name": "レシート色分け",
+  "description": "レシートの商品を色分けして合計するツール",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f4ee",
+  "theme_color": "#f7f4ee",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
