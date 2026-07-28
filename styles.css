@@ -26,14 +26,15 @@ button, .photo-button { min-height: 48px; border: 0; border-radius: 14px; font: 
 .primary:disabled { opacity: .35; }
 progress { width: 100%; margin-top: 15px; accent-color: #22211f; }
 #status { margin: 6px 0 0; font-size: .85rem; text-align: center; color: #706b63; }
-.colors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px; }
-.color-button { display: grid; place-items: center; gap: 4px; padding: 8px 2px; border: 2px solid transparent; background: #f5f2ec; font-size: .78rem; }
+.colors { position: fixed; z-index: 12; top: 50%; left: max(8px, calc(50% - 305px)); display: grid; grid-template-columns: 48px; gap: 8px; padding: 7px; border: 1px solid #e3ddd2; border-radius: 18px; background: #fffc; box-shadow: 0 8px 24px #493b2825; transform: translateY(-50%); backdrop-filter: blur(8px); }
+.color-button { display: grid; place-items: center; gap: 4px; width: 48px; min-height: 48px; padding: 6px; border: 2px solid transparent; background: #f5f2ec; font-size: .78rem; }
 .color-button::before { content: ""; width: 23px; height: 23px; border-radius: 50%; background: var(--group-color); }
 .color-button.active { border-color: var(--group-color); background: #fff; }
 .hint { margin: -6px 0 12px; font-size: .78rem; }
 .items { display: grid; gap: 8px; }
 .receipts { display: grid; gap: 18px; }
 .receipt-block { padding: 14px; border: 1px solid #e3ddd2; border-radius: 16px; background: #fbfaf7; }
+.receipt-image { display: block; width: 100%; max-height: 300px; margin-bottom: 12px; border-radius: 12px; object-fit: contain; background: #eee; }
 .receipt-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .receipt-heading h3 { margin: 0; font-size: .95rem; }
 .receipt-heading span { color: #837d73; font-size: .75rem; }
@@ -73,3 +74,8 @@ progress { width: 100%; margin-top: 15px; accent-color: #22211f; }
 .selection-bar { position: absolute; z-index: 0; top: 88px; right: 0; left: 0; height: 44px; border-radius: 10px; background: #eeeae3; }
 body.modal-open { overflow: hidden; }
 [hidden] { display: none !important; }
+
+@media (max-width: 680px) {
+  #assignment { padding-left: 66px; }
+  .receipt-block { padding: 10px; }
+}

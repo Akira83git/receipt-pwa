@@ -99,7 +99,8 @@ async function scanReceipt() {
     });
     const detectedItems = extractReceiptLines(result.data.text);
     if (!detectedItems.length) throw new Error("金額候補を見つけられませんでした。明るい場所で正面から撮り直してください。");
-    receipts.push({ id: nextReceiptId++, items: detectedItems });
+    const receiptImageUrl = els.preview.src;
+    receipts.push({ id: nextReceiptId++, imageUrl: receiptImageUrl, items: detectedItems });
     imageFile = null;
     els["receipt-input"].value = "";
     els.preview.hidden = true;
@@ -132,6 +133,7 @@ function renderReceipts() {
   els.receipts.innerHTML = receipts.map((receipt, index) => `
     <section class="receipt-block" data-receipt="${receipt.id}">
       <div class="receipt-heading"><h3>レシート ${index + 1}</h3><span>${receipt.items.length}件</span></div>
+      <img class="receipt-image" src="${receipt.imageUrl}" alt="レシート ${index + 1}">
       <div class="items">${receipt.items.map(item => renderItem(receipt.id, item)).join("")}</div>
       <div class="live-summary"><h2>このレシートの合計</h2>${renderTotals(getGroupTotals(receipt.items))}</div>
     </section>
