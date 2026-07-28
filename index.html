@@ -20,7 +20,7 @@
     </header>
 
     <section class="card capture-card">
-      <label class="photo-button" for="receipt-input">レシートを撮影・選択</label>
+      <label id="photo-label" class="photo-button" for="receipt-input">レシートを撮影・選択</label>
       <input id="receipt-input" type="file" accept="image/*">
       <img id="preview" alt="選択したレシート" hidden>
       <button id="scan-button" class="primary" type="button" disabled>文字を読み取る</button>
@@ -33,13 +33,14 @@
     <section id="assignment" class="card" hidden>
       <h2>1. 色を選ぶ</h2>
       <div id="colors" class="colors" aria-label="色グループ"></div>
-      <h2>2. 品目を選ぶ</h2>
-      <p class="hint">品目を押して色分け。金額欄は直接修正できます。</p>
-      <div id="items" class="items"></div>
-      <div class="live-summary">
-        <h2>現在の合計</h2>
-        <div id="live-totals"></div>
+      <h2>2. レシートごとに品目を選ぶ</h2>
+      <p class="hint">品目を押して色分け。商品名と金額は修正できます。</p>
+      <div id="receipts" class="receipts"></div>
+      <div id="overall-summary" class="overall-summary" hidden>
+        <h2>すべてのレシートの合計</h2>
+        <div id="overall-totals"></div>
       </div>
+      <label class="photo-button add-receipt" for="receipt-input">＋ レシートを追加</label>
     </section>
   </main>
 

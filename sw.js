@@ -1,4 +1,4 @@
-const CACHE = "receipt-splitter-v9";
+const CACHE = "receipt-splitter-v10";
 const APP_SHELL = ["./", "index.html", "styles.css", "app.js", "manifest.webmanifest", "icon.svg"];
 
 self.addEventListener("install", event => {

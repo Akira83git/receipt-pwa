@@ -6,14 +6,16 @@ const GROUPS = [
 ];
 
 const els = Object.fromEntries([
-  "receipt-input", "preview", "scan-button", "progress-wrap", "progress",
-  "status", "assignment", "colors", "items", "live-totals", "wheel-modal",
-  "wheel-backdrop", "wheel-cancel", "wheel-done", "wheel-value", "integer-wheel", "decimal-wheel",
+  "receipt-input", "photo-label", "preview", "scan-button", "progress-wrap", "progress",
+  "status", "assignment", "colors", "receipts", "overall-summary", "overall-totals",
+  "wheel-modal", "wheel-backdrop", "wheel-cancel", "wheel-done", "wheel-value",
+  "integer-wheel", "decimal-wheel",
 ].map(id => [id, document.getElementById(id)]));
 
 let imageFile;
 let activeGroup = GROUPS[0].id;
-let items = [];
+let receipts = [];
+let nextReceiptId = 1;
 let editingItem = null;
 let wheelInteger = 0;
 let wheelDecimal = 0;
@@ -23,7 +25,6 @@ els["integer-wheel"].innerHTML = Array.from({ length: 1999 }, (_, index) => inde
   `<div class="wheel-option" data-value="${value}">${value}</div>`).join("");
 els["decimal-wheel"].innerHTML = Array.from({ length: 100 }, (_, value) =>
   `<div class="wheel-option" data-value="${value}">${String(value).padStart(2, "0")}</div>`).join("");
-
 els.colors.innerHTML = GROUPS.map((group, index) => `
   <button class="color-button ${index === 0 ? "active" : ""}" type="button"
     data-group="${group.id}" style="--group-color:${group.color}" aria-label="${group.label}"></button>
@@ -35,7 +36,7 @@ els["receipt-input"].addEventListener("change", event => {
   els.preview.src = URL.createObjectURL(imageFile);
   els.preview.hidden = false;
   els["scan-button"].disabled = false;
-  els.assignment.hidden = true;
+  document.querySelector(".capture-card").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 els.colors.addEventListener("click", event => {
@@ -45,28 +46,25 @@ els.colors.addEventListener("click", event => {
   document.querySelectorAll(".color-button").forEach(el => el.classList.toggle("active", el === button));
 });
 
-els.items.addEventListener("click", event => {
-  const button = event.target.closest("[data-assign-id]");
-  if (!button) return;
-  const item = items.find(entry => entry.id === Number(button.dataset.assignId));
-  item.group = item.group === activeGroup ? null : activeGroup;
-  renderItems();
-});
-
-els.items.addEventListener("input", event => {
-  const nameInput = event.target.closest("[data-name-id]");
-  if (nameInput) {
-    const item = items.find(entry => entry.id === Number(nameInput.dataset.nameId));
-    if (item) item.name = nameInput.value;
-    autoResizeName(nameInput);
+els.receipts.addEventListener("click", event => {
+  const assignButton = event.target.closest("[data-assign-id]");
+  if (assignButton) {
+    const item = findItem(Number(assignButton.dataset.receiptId), Number(assignButton.dataset.assignId));
+    if (!item) return;
+    item.group = item.group === activeGroup ? null : activeGroup;
+    renderReceipts();
     return;
   }
+  const priceButton = event.target.closest("[data-price-id]");
+  if (priceButton) openWheel(Number(priceButton.dataset.receiptId), Number(priceButton.dataset.priceId));
 });
 
-els.items.addEventListener("click", event => {
-  const priceButton = event.target.closest("[data-price-id]");
-  if (!priceButton) return;
-  openWheel(Number(priceButton.dataset.priceId));
+els.receipts.addEventListener("input", event => {
+  const nameInput = event.target.closest("[data-name-id]");
+  if (!nameInput) return;
+  const item = findItem(Number(nameInput.dataset.receiptId), Number(nameInput.dataset.nameId));
+  if (item) item.name = nameInput.value;
+  autoResizeName(nameInput);
 });
 
 els["integer-wheel"].addEventListener("scroll", () => updateWheelFromScroll("integer"), { passive: true });
@@ -79,9 +77,8 @@ els["wheel-done"].addEventListener("click", () => {
     editingItem.price = wheelNegative ? -absoluteValue : absoluteValue;
   }
   closeWheel();
-  renderItems();
+  renderReceipts();
 });
-
 els["scan-button"].addEventListener("click", scanReceipt);
 
 async function scanReceipt() {
@@ -100,11 +97,18 @@ async function scanReceipt() {
         }
       },
     });
-    items = extractReceiptLines(result.data.text);
-    if (!items.length) throw new Error("金額候補を見つけられませんでした。明るい場所で正面から撮り直してください。");
-    renderItems();
+    const detectedItems = extractReceiptLines(result.data.text);
+    if (!detectedItems.length) throw new Error("金額候補を見つけられませんでした。明るい場所で正面から撮り直してください。");
+    receipts.push({ id: nextReceiptId++, items: detectedItems });
+    imageFile = null;
+    els["receipt-input"].value = "";
+    els.preview.hidden = true;
+    els.preview.removeAttribute("src");
+    els["scan-button"].disabled = true;
+    els["photo-label"].textContent = "さらにレシートを撮影・選択";
+    renderReceipts();
     els.assignment.hidden = false;
-    els.assignment.scrollIntoView({ behavior: "smooth" });
+    els.receipts.lastElementChild?.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     alert(error.message || "読み取りに失敗しました。");
   } finally {
@@ -124,23 +128,53 @@ function extractReceiptLines(text) {
   });
 }
 
-function renderItems() {
-  els.items.innerHTML = items.map(item => {
-    const group = GROUPS.find(entry => entry.id === item.group);
-    return `<div class="item ${group ? "assigned" : ""}"
-      style="--group-color:${group?.color || "#b7b0a6"}">
-      <div class="item-main">
-        <button class="item-select" type="button" data-assign-id="${item.id}" aria-label="色を付ける">
-          <span class="item-dot"></span>
-        </button>
-        <textarea class="name-edit" rows="1" data-name-id="${item.id}" aria-label="商品名">${escapeHtml(item.name)}</textarea>
-      </div>
-      <button class="price-edit" type="button" data-price-id="${item.id}" aria-label="金額を修正">
-        $${item.price.toFixed(2)}</button>
-    </div>`;
-  }).join("");
-  els.items.querySelectorAll(".name-edit").forEach(autoResizeName);
-  renderLiveTotals();
+function renderReceipts() {
+  els.receipts.innerHTML = receipts.map((receipt, index) => `
+    <section class="receipt-block" data-receipt="${receipt.id}">
+      <div class="receipt-heading"><h3>レシート ${index + 1}</h3><span>${receipt.items.length}件</span></div>
+      <div class="items">${receipt.items.map(item => renderItem(receipt.id, item)).join("")}</div>
+      <div class="live-summary"><h2>このレシートの合計</h2>${renderTotals(getGroupTotals(receipt.items))}</div>
+    </section>
+  `).join("");
+  els.receipts.querySelectorAll(".name-edit").forEach(autoResizeName);
+  const showOverall = receipts.length >= 2;
+  els["overall-summary"].hidden = !showOverall;
+  if (showOverall) {
+    const allItems = receipts.flatMap(receipt => receipt.items);
+    els["overall-totals"].innerHTML = renderTotals(getGroupTotals(allItems));
+  }
+}
+
+function renderItem(receiptId, item) {
+  const group = GROUPS.find(entry => entry.id === item.group);
+  return `<div class="item ${group ? "assigned" : ""}" style="--group-color:${group?.color || "#b7b0a6"}">
+    <div class="item-main">
+      <button class="item-select" type="button" data-receipt-id="${receiptId}" data-assign-id="${item.id}" aria-label="色を付ける">
+        <span class="item-dot"></span>
+      </button>
+      <textarea class="name-edit" rows="1" data-receipt-id="${receiptId}" data-name-id="${item.id}" aria-label="商品名">${escapeHtml(item.name)}</textarea>
+    </div>
+    <button class="price-edit" type="button" data-receipt-id="${receiptId}" data-price-id="${item.id}" aria-label="金額を修正">
+      $${item.price.toFixed(2)}</button>
+  </div>`;
+}
+
+function getGroupTotals(sourceItems) {
+  return GROUPS.map(group => ({
+    ...group,
+    count: sourceItems.filter(item => item.group === group.id).length,
+    total: sourceItems.filter(item => item.group === group.id).reduce((sum, item) => sum + item.price, 0),
+  })).filter(row => row.count > 0);
+}
+
+function renderTotals(rows) {
+  return rows.length ? rows.map(row => `<div class="live-row" style="--group-color:${row.color}">
+    <span class="live-dot"></span><span class="sr-only">${row.label}</span><span></span><strong>$${row.total.toFixed(2)}</strong>
+  </div>`).join("") : `<p class="empty-total">まだ色分けされていません</p>`;
+}
+
+function findItem(receiptId, itemId) {
+  return receipts.find(receipt => receipt.id === receiptId)?.items.find(item => item.id === itemId);
 }
 
 function autoResizeName(field) {
@@ -148,23 +182,8 @@ function autoResizeName(field) {
   field.style.height = `${field.scrollHeight}px`;
 }
 
-function getGroupTotals() {
-  return GROUPS.map(group => ({
-    ...group,
-    count: items.filter(item => item.group === group.id).length,
-    total: items.filter(item => item.group === group.id).reduce((sum, item) => sum + item.price, 0),
-  }));
-}
-
-function renderLiveTotals() {
-  const selectedRows = getGroupTotals().filter(row => row.count > 0);
-  els["live-totals"].innerHTML = selectedRows.length ? selectedRows.map(row => `<div class="live-row" style="--group-color:${row.color}">
-    <span class="live-dot"></span><span class="sr-only">${row.label}</span><span></span><strong>$${row.total.toFixed(2)}</strong>
-  </div>`).join("") : `<p class="empty-total">まだ色分けされていません</p>`;
-}
-
-function openWheel(itemId) {
-  editingItem = items.find(item => item.id === itemId);
+function openWheel(receiptId, itemId) {
+  editingItem = findItem(receiptId, itemId);
   if (!editingItem) return;
   const absolutePrice = Math.abs(editingItem.price);
   wheelNegative = editingItem.price < 0;
@@ -193,8 +212,7 @@ function updateWheelFromScroll(type) {
   if (type === "integer") {
     wheelInteger = value;
     if (value !== 0) wheelNegative = value < 0;
-  }
-  else wheelDecimal = value;
+  } else wheelDecimal = value;
   updateWheelValue();
 }
 
