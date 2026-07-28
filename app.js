@@ -7,7 +7,7 @@ const GROUPS = [
 
 const els = Object.fromEntries([
   "receipt-input", "photo-label", "preview", "scan-button", "progress-wrap", "progress",
-  "status", "assignment", "colors", "receipts", "overall-summary", "overall-totals",
+  "status", "assignment", "colors", "receipt-nav", "receipts", "overall-summary", "overall-totals",
   "wheel-modal", "wheel-backdrop", "wheel-cancel", "wheel-done", "wheel-value",
   "integer-wheel", "decimal-wheel",
 ].map(id => [id, document.getElementById(id)]));
@@ -44,6 +44,13 @@ els.colors.addEventListener("click", event => {
   if (!button) return;
   activeGroup = button.dataset.group;
   document.querySelectorAll(".color-button").forEach(el => el.classList.toggle("active", el === button));
+});
+
+els["receipt-nav"].addEventListener("click", event => {
+  const button = event.target.closest("[data-jump-receipt]");
+  if (!button) return;
+  els.receipts.querySelector(`[data-receipt="${button.dataset.jumpReceipt}"]`)
+    ?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 els.receipts.addEventListener("click", event => {
@@ -130,6 +137,9 @@ function extractReceiptLines(text) {
 }
 
 function renderReceipts() {
+  els["receipt-nav"].innerHTML = receipts.map((receipt, index) =>
+    `<button class="receipt-jump" type="button" data-jump-receipt="${receipt.id}" aria-label="レシート ${index + 1}へ移動">${index + 1}</button>`
+  ).join("");
   els.receipts.innerHTML = receipts.map((receipt, index) => `
     <section class="receipt-block" data-receipt="${receipt.id}">
       <div class="receipt-heading"><h3>レシート ${index + 1}</h3><span>${receipt.items.length}件</span></div>
