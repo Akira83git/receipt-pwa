@@ -1,5 +1,5 @@
-const CACHE = "receipt-splitter-v13";
-const APP_SHELL = ["./", "index.html", "styles.css?v=0.13.0", "app.js?v=0.13.0", "manifest.webmanifest", "icon.svg"];
+const CACHE = "receipt-splitter-v14";
+const APP_SHELL = ["./", "index.html", "styles.css?v=0.14.0", "app.js?v=0.14.0", "manifest.webmanifest", "icon.svg"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

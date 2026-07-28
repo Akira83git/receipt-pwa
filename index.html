@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="レシート色分け">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=0.13.0">
+  <link rel="stylesheet" href="styles.css?v=0.14.0">
   <title>レシート色分け</title>
 </head>
 <body>
@@ -34,7 +34,11 @@
       <h2 class="sr-only">色を選ぶ</h2>
       <aside class="side-tools" aria-label="色とレシートの移動">
         <div id="colors" class="colors" aria-label="色グループ"></div>
-        <div id="receipt-nav" class="receipt-nav" aria-label="レシートへ移動"></div>
+        <div class="receipt-nav-wrap">
+          <span id="receipt-nav-up" class="scroll-cue cue-up" hidden aria-hidden="true">▲</span>
+          <div id="receipt-nav" class="receipt-nav" aria-label="レシートへ移動"></div>
+          <span id="receipt-nav-down" class="scroll-cue cue-down" hidden aria-hidden="true">▼</span>
+        </div>
       </aside>
       <h2>レシートごとに品目を選ぶ</h2>
       <p class="hint">品目を押して色分け。商品名と金額は修正できます。</p>
@@ -45,7 +49,7 @@
       </div>
       <label class="photo-button add-receipt" for="receipt-input">＋ レシートを追加</label>
     </section>
-    <p class="app-version">Version 0.13.0</p>
+    <p class="app-version">Version 0.14.0</p>
   </main>
 
   <div id="wheel-modal" class="wheel-modal" hidden>
@@ -67,6 +71,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="app.js?v=0.13.0"></script>
+  <script src="app.js?v=0.14.0"></script>
 </body>
 </html>

@@ -32,10 +32,17 @@ progress { width: 100%; margin-top: 15px; accent-color: #22211f; }
 .color-button { display: grid; place-items: center; width: 38px; min-height: 38px; padding: 4px; border: 2px solid transparent; background: #f5f2ec; }
 .color-button::before { content: ""; width: 18px; height: 18px; border-radius: 50%; background: var(--group-color); }
 .color-button.active { border-color: var(--group-color); background: #fff; }
-.receipt-nav { display: grid; gap: 5px; max-height: 124px; padding: 5px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; border: 1px solid #e3ddd2; border-radius: 15px; background: #fffc; box-shadow: 0 8px 24px #493b2825; -webkit-overflow-scrolling: touch; backdrop-filter: blur(8px); }
+.receipt-nav-wrap { position: relative; }
+.receipt-nav { display: grid; gap: 5px; max-height: 200px; padding: 5px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; border: 1px solid #e3ddd2; border-radius: 15px; background: #fffc; box-shadow: 0 8px 24px #493b2825; -webkit-overflow-scrolling: touch; backdrop-filter: blur(8px); }
 .receipt-nav::-webkit-scrollbar { display: none; }
 .receipt-jump { display: grid; flex: 0 0 auto; place-items: center; width: 38px; min-height: 34px; padding: 0; scroll-snap-align: center; background: #eeeae3; color: #45413b; font-size: .72rem; }
 .receipt-jump:active { background: #dcd6cc; }
+.scroll-cue { position: absolute; z-index: 2; left: 50%; color: #45413b; font-size: .72rem; line-height: 1; pointer-events: none; text-shadow: 0 1px 3px #fff; }
+.cue-up { top: -15px; animation: cue-up 1.4s ease-in-out infinite; }
+.cue-down { bottom: -15px; animation: cue-down 1.4s ease-in-out infinite; }
+@keyframes cue-up { 0%, 100% { transform: translate(-50%, 2px); } 50% { transform: translate(-50%, -2px); } }
+@keyframes cue-down { 0%, 100% { transform: translate(-50%, -2px); } 50% { transform: translate(-50%, 2px); } }
+@media (prefers-reduced-motion: reduce) { .scroll-cue { animation: none; transform: translateX(-50%); } }
 .hint { margin: -6px 0 12px; font-size: .78rem; }
 .items { display: grid; gap: 8px; }
 .receipts { display: grid; gap: 18px; }

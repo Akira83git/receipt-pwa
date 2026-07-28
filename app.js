@@ -7,7 +7,8 @@ const GROUPS = [
 
 const els = Object.fromEntries([
   "receipt-input", "photo-label", "preview", "scan-button", "progress-wrap", "progress",
-  "status", "assignment", "colors", "receipt-nav", "receipts", "overall-summary", "overall-totals",
+  "status", "assignment", "colors", "receipt-nav", "receipt-nav-up", "receipt-nav-down",
+  "receipts", "overall-summary", "overall-totals",
   "wheel-modal", "wheel-backdrop", "wheel-cancel", "wheel-done", "wheel-value",
   "integer-wheel", "decimal-wheel",
 ].map(id => [id, document.getElementById(id)]));
@@ -52,6 +53,7 @@ els["receipt-nav"].addEventListener("click", event => {
   els.receipts.querySelector(`[data-receipt="${button.dataset.jumpReceipt}"]`)
     ?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
+els["receipt-nav"].addEventListener("scroll", updateReceiptNavCues, { passive: true });
 
 els.receipts.addEventListener("click", event => {
   const assignButton = event.target.closest("[data-assign-id]");
@@ -140,6 +142,7 @@ function renderReceipts() {
   els["receipt-nav"].innerHTML = receipts.map((receipt, index) =>
     `<button class="receipt-jump" type="button" data-jump-receipt="${receipt.id}" aria-label="レシート ${index + 1}へ移動">${index + 1}</button>`
   ).join("");
+  requestAnimationFrame(updateReceiptNavCues);
   els.receipts.innerHTML = receipts.map((receipt, index) => `
     <section class="receipt-block" data-receipt="${receipt.id}">
       <div class="receipt-heading"><h3>レシート ${index + 1}</h3><span>${receipt.items.length}件</span></div>
@@ -155,6 +158,14 @@ function renderReceipts() {
     const allItems = receipts.flatMap(receipt => receipt.items);
     els["overall-totals"].innerHTML = renderTotals(getGroupTotals(allItems));
   }
+}
+
+function updateReceiptNavCues() {
+  const nav = els["receipt-nav"];
+  const canScrollUp = nav.scrollTop > 2;
+  const canScrollDown = nav.scrollTop + nav.clientHeight < nav.scrollHeight - 2;
+  els["receipt-nav-up"].hidden = !canScrollUp;
+  els["receipt-nav-down"].hidden = !canScrollDown;
 }
 
 function renderItem(receiptId, item) {
