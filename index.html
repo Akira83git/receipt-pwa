@@ -43,6 +43,24 @@
     </section>
   </main>
 
+  <div id="wheel-modal" class="wheel-modal" hidden>
+    <button id="wheel-backdrop" class="wheel-backdrop" type="button" aria-label="閉じる"></button>
+    <section class="wheel-sheet" role="dialog" aria-modal="true" aria-labelledby="wheel-title">
+      <div class="wheel-header">
+        <button id="wheel-cancel" class="wheel-action" type="button">取消</button>
+        <h2 id="wheel-title">金額を修正</h2>
+        <button id="wheel-done" class="wheel-action done" type="button">決定</button>
+      </div>
+      <div class="wheel-value" aria-live="polite">$<span id="wheel-value">0.00</span></div>
+      <div class="wheel-picker">
+        <div class="selection-bar"></div>
+        <div id="integer-wheel" class="wheel" aria-label="整数"></div>
+        <span class="decimal-point">.</span>
+        <div id="decimal-wheel" class="wheel" aria-label="小数"></div>
+      </div>
+    </section>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 </body>
