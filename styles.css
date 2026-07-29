@@ -22,7 +22,9 @@ h2 { margin: 2px 0 12px; font-size: 1rem; }
 button, .photo-button { min-height: 48px; border: 0; border-radius: 14px; font: inherit; font-weight: 700; cursor: pointer; }
 .photo-button { display: grid; place-items: center; width: 100%; border: 1.5px dashed #9e9588; background: #fbfaf7; }
 #receipt-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-#preview { display: block; width: 100%; max-height: 360px; margin: 14px 0; border-radius: 14px; object-fit: contain; background: #eee; }
+.crop-stage { margin: 14px 0; }
+#preview { display: block; width: 100%; max-height: 420px; border-radius: 14px; object-fit: contain; background: #eee; touch-action: none; }
+.crop-stage p { margin: 7px 0 0; color: #706b63; font-size: .75rem; text-align: center; }
 .primary { width: 100%; margin-top: 14px; padding: 0 18px; color: #fff; background: #22211f; }
 .primary:disabled { opacity: .35; }
 progress { width: 100%; margin-top: 15px; accent-color: #22211f; }
@@ -50,7 +52,9 @@ progress { width: 100%; margin-top: 15px; accent-color: #22211f; }
 .receipt-image { display: block; width: 100%; max-height: 300px; margin-bottom: 12px; border-radius: 12px; object-fit: contain; background: #eee; }
 .receipt-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .receipt-heading h3 { margin: 0; font-size: .95rem; }
-.receipt-heading span { color: #837d73; font-size: .75rem; }
+.receipt-heading-actions { display: flex; align-items: center; gap: 8px; }
+.receipt-count { color: #837d73; font-size: .75rem; }
+.receipt-delete { min-height: 32px; padding: 0 9px; border: 1px solid #e1b8b5; border-radius: 9px; background: #fff; color: #b9433e; font-size: .7rem; }
 .item { display: grid; grid-template-columns: minmax(0, 1fr) 104px; gap: 8px; align-items: center; width: 100%; min-height: 56px; padding: 7px 8px 7px 12px; border-radius: 14px; background: #f7f5f1; }
 .item-main { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; align-items: center; min-width: 0; }
 .item-select { display: grid; place-items: center; width: 38px; min-height: 44px; padding: 0; border-radius: 10px; background: transparent; }

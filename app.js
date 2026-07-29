@@ -6,7 +6,7 @@ const GROUPS = [
 ];
 
 const els = Object.fromEntries([
-  "receipt-input", "photo-label", "preview", "scan-button", "progress-wrap", "progress",
+  "receipt-input", "photo-label", "crop-stage", "preview", "scan-button", "progress-wrap", "progress",
   "status", "assignment", "colors", "receipt-nav", "receipt-nav-up", "receipt-nav-down",
   "receipts", "overall-summary", "overall-totals",
   "wheel-modal", "wheel-backdrop", "wheel-cancel", "wheel-done", "wheel-value",
@@ -14,6 +14,10 @@ const els = Object.fromEntries([
 ].map(id => [id, document.getElementById(id)]));
 
 let imageFile;
+let currentImageUrl;
+let previewBitmap;
+let cropRect;
+let dragStart;
 let activeGroup = GROUPS[0].id;
 let receipts = [];
 let nextReceiptId = 1;
@@ -31,14 +35,40 @@ els.colors.innerHTML = GROUPS.map((group, index) => `
     data-group="${group.id}" style="--group-color:${group.color}" aria-label="${group.label}"></button>
 `).join("");
 
-els["receipt-input"].addEventListener("change", event => {
+els["receipt-input"].addEventListener("change", async event => {
   imageFile = event.target.files[0];
   if (!imageFile) return;
-  els.preview.src = URL.createObjectURL(imageFile);
-  els.preview.hidden = false;
-  els["scan-button"].disabled = false;
-  document.querySelector(".capture-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  if (currentImageUrl) URL.revokeObjectURL(currentImageUrl);
+  currentImageUrl = URL.createObjectURL(imageFile);
+  try {
+    await loadCropPreview(imageFile);
+    els["crop-stage"].hidden = false;
+    els["scan-button"].disabled = false;
+    document.querySelector(".capture-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch {
+    alert("画像を開けませんでした。別の写真を選んでください。");
+  }
 });
+
+els.preview.addEventListener("pointerdown", event => {
+  const point = canvasPoint(event);
+  dragStart = point;
+  cropRect = { x: point.x, y: point.y, width: 0, height: 0 };
+  els.preview.setPointerCapture(event.pointerId);
+});
+els.preview.addEventListener("pointermove", event => {
+  if (!dragStart) return;
+  const point = canvasPoint(event);
+  cropRect = {
+    x: Math.min(dragStart.x, point.x),
+    y: Math.min(dragStart.y, point.y),
+    width: Math.abs(point.x - dragStart.x),
+    height: Math.abs(point.y - dragStart.y),
+  };
+  drawCropPreview();
+});
+els.preview.addEventListener("pointerup", finishCropDrag);
+els.preview.addEventListener("pointercancel", finishCropDrag);
 
 els.colors.addEventListener("click", event => {
   const button = event.target.closest("[data-group]");
@@ -56,6 +86,11 @@ els["receipt-nav"].addEventListener("click", event => {
 els["receipt-nav"].addEventListener("scroll", updateReceiptNavCues, { passive: true });
 
 els.receipts.addEventListener("click", event => {
+  const deleteButton = event.target.closest("[data-delete-receipt]");
+  if (deleteButton) {
+    deleteReceipt(Number(deleteButton.dataset.deleteReceipt));
+    return;
+  }
   const assignButton = event.target.closest("[data-assign-id]");
   if (assignButton) {
     const item = findItem(Number(assignButton.dataset.receiptId), Number(assignButton.dataset.assignId));
@@ -98,7 +133,7 @@ async function scanReceipt() {
   }
   setBusy(true, "OCRを準備中…", 0);
   try {
-    const source = await resizeImage(imageFile);
+    const source = getSelectedImage();
     const result = await Tesseract.recognize(source, "eng", {
       logger: message => {
         if (typeof message.progress === "number") {
@@ -108,12 +143,13 @@ async function scanReceipt() {
     });
     const detectedItems = extractReceiptLines(result.data.text);
     if (!detectedItems.length) throw new Error("金額候補を見つけられませんでした。明るい場所で正面から撮り直してください。");
-    const receiptImageUrl = els.preview.src;
-    receipts.push({ id: nextReceiptId++, imageUrl: receiptImageUrl, items: detectedItems });
+    receipts.push({ id: nextReceiptId++, imageUrl: currentImageUrl, items: detectedItems });
     imageFile = null;
+    currentImageUrl = null;
+    previewBitmap = null;
+    cropRect = null;
     els["receipt-input"].value = "";
-    els.preview.hidden = true;
-    els.preview.removeAttribute("src");
+    els["crop-stage"].hidden = true;
     els["scan-button"].disabled = true;
     els["photo-label"].textContent = "さらにレシートを撮影・選択";
     renderReceipts();
@@ -145,7 +181,10 @@ function renderReceipts() {
   requestAnimationFrame(updateReceiptNavCues);
   els.receipts.innerHTML = receipts.map((receipt, index) => `
     <section class="receipt-block" data-receipt="${receipt.id}">
-      <div class="receipt-heading"><h3>レシート ${index + 1}</h3><span>${receipt.items.length}件</span></div>
+      <div class="receipt-heading"><h3>レシート ${index + 1}</h3>
+        <div class="receipt-heading-actions"><span class="receipt-count">${receipt.items.length}件</span>
+          <button class="receipt-delete" type="button" data-delete-receipt="${receipt.id}">削除</button></div>
+      </div>
       <img class="receipt-image" src="${receipt.imageUrl}" alt="レシート ${index + 1}">
       <div class="items">${receipt.items.map(item => renderItem(receipt.id, item)).join("")}</div>
       <div class="live-summary"><h2>このレシートの合計</h2>${renderTotals(getGroupTotals(receipt.items))}</div>
@@ -200,6 +239,18 @@ function findItem(receiptId, itemId) {
   return receipts.find(receipt => receipt.id === receiptId)?.items.find(item => item.id === itemId);
 }
 
+function deleteReceipt(receiptId) {
+  const receipt = receipts.find(entry => entry.id === receiptId);
+  if (!receipt || !confirm("このレシートを削除しますか？")) return;
+  URL.revokeObjectURL(receipt.imageUrl);
+  receipts = receipts.filter(entry => entry.id !== receiptId);
+  renderReceipts();
+  if (!receipts.length) {
+    els.assignment.hidden = true;
+    els["photo-label"].textContent = "レシートを撮影・選択";
+  }
+}
+
 function autoResizeName(field) {
   field.style.height = "auto";
   field.style.height = `${field.scrollHeight}px`;
@@ -251,13 +302,65 @@ function setBusy(busy, status = "", progress = 0) {
   els.progress.value = progress;
 }
 
-async function resizeImage(file) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1800 / bitmap.width);
+async function loadCropPreview(file) {
+  previewBitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1800 / previewBitmap.width);
+  els.preview.width = Math.round(previewBitmap.width * scale);
+  els.preview.height = Math.round(previewBitmap.height * scale);
+  cropRect = { x: 0, y: 0, width: els.preview.width, height: els.preview.height };
+  drawCropPreview();
+}
+
+function drawCropPreview() {
+  const canvas = els.preview;
+  const context = canvas.getContext("2d");
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(previewBitmap, 0, 0, canvas.width, canvas.height);
+  if (!cropRect) return;
+  context.save();
+  context.fillStyle = "rgba(0, 0, 0, .42)";
+  context.beginPath();
+  context.rect(0, 0, canvas.width, canvas.height);
+  context.rect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+  context.fill("evenodd");
+  context.strokeStyle = "#fff";
+  context.lineWidth = Math.max(3, canvas.width / 400);
+  context.setLineDash([12, 8]);
+  context.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+  context.restore();
+}
+
+function canvasPoint(event) {
+  const bounds = els.preview.getBoundingClientRect();
+  return {
+    x: Math.max(0, Math.min(els.preview.width, (event.clientX - bounds.left) * els.preview.width / bounds.width)),
+    y: Math.max(0, Math.min(els.preview.height, (event.clientY - bounds.top) * els.preview.height / bounds.height)),
+  };
+}
+
+function finishCropDrag(event) {
+  if (!dragStart) return;
+  els.preview.releasePointerCapture?.(event.pointerId);
+  dragStart = null;
+  if (cropRect.width < 20 || cropRect.height < 20) {
+    cropRect = { x: 0, y: 0, width: els.preview.width, height: els.preview.height };
+    drawCropPreview();
+  }
+}
+
+function getSelectedImage() {
+  const selection = cropRect || { x: 0, y: 0, width: els.preview.width, height: els.preview.height };
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  canvas.width = Math.max(1, Math.round(selection.width));
+  canvas.height = Math.max(1, Math.round(selection.height));
+  canvas.getContext("2d").drawImage(
+    previewBitmap,
+    selection.x * previewBitmap.width / els.preview.width,
+    selection.y * previewBitmap.height / els.preview.height,
+    selection.width * previewBitmap.width / els.preview.width,
+    selection.height * previewBitmap.height / els.preview.height,
+    0, 0, canvas.width, canvas.height,
+  );
   return canvas;
 }
 

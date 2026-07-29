@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="レシート色分け">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css?v=0.14.0">
+  <link rel="stylesheet" href="styles.css?v=0.15.0">
   <title>レシート色分け</title>
 </head>
 <body>
@@ -22,7 +22,10 @@
     <section class="card capture-card">
       <label id="photo-label" class="photo-button" for="receipt-input">レシートを撮影・選択</label>
       <input id="receipt-input" type="file" accept="image/*">
-      <img id="preview" alt="選択したレシート" hidden>
+      <div id="crop-stage" class="crop-stage" hidden>
+        <canvas id="preview" aria-label="読み取り範囲を選択するレシート画像"></canvas>
+        <p>読み取る範囲を指で囲んでください</p>
+      </div>
       <button id="scan-button" class="primary" type="button" disabled>文字を読み取る</button>
       <div id="progress-wrap" hidden>
         <progress id="progress" max="1" value="0"></progress>
@@ -49,7 +52,7 @@
       </div>
       <label class="photo-button add-receipt" for="receipt-input">＋ レシートを追加</label>
     </section>
-    <p class="app-version">Version 0.14.0</p>
+    <p class="app-version">Version 0.15.0</p>
   </main>
 
   <div id="wheel-modal" class="wheel-modal" hidden>
@@ -71,6 +74,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="app.js?v=0.14.0"></script>
+  <script src="app.js?v=0.15.0"></script>
 </body>
 </html>
